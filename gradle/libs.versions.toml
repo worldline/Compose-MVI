@@ -1,7 +1,10 @@
 [versions]
 accompanist = "0.34.0"
 agp = "8.4.0"
+browser = "1.8.0"
+coilCompose = "2.6.0"
 kotlin = "1.9.23"
+kotlinxDatetime = "0.5.0"
 ksp = "1.9.23-1.0.18"
 coreKtx = "1.13.1"
 junit = "4.13.2"
@@ -12,10 +15,14 @@ activityCompose = "1.9.0"
 composeBom = "2024.05.00"
 appcompat = "1.6.1"
 material = "1.12.0"
+metricsPerformance = "1.0.0-beta01"
 
 [libraries]
 accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanist" }
+androidx-browser = { module = "androidx.browser:browser", version.ref = "browser" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-metrics-performance = { module = "androidx.metrics:metrics-performance", version.ref = "metricsPerformance" }
+coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coilCompose" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
@@ -31,6 +38,7 @@ androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-man
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
 androidx-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
