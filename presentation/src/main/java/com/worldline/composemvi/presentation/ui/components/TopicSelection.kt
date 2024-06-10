@@ -9,35 +9,32 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.trace
+import com.worldline.composemvi.domain.model.FollowableTopic
 import com.worldline.composemvi.domain.model.UserNewsResource
-import com.worldline.composemvi.presentation.ui.foryou.OnboardingUiState
 import com.worldline.composemvi.presentation.ui.theme.ComposeMVITheme
 import com.worldline.composemvi.presentation.utils.DevicePreviews
 import com.worldline.composemvi.presentation.utils.UserNewsResourcePreviewParameterProvider
 
 @Composable
 fun TopicSelection(
-    onboardingUiState: OnboardingUiState.Shown,
+    topics: List<FollowableTopic>,
     onTopicCheckedChanged: (String, Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) = trace("TopicSelection") {
     val lazyGridState = rememberLazyGridState()
     val topicSelectionTestTag = "forYou:topicSelection"
-
-    TrackScrollJank(scrollableState = lazyGridState, stateName = topicSelectionTestTag)
 
     Box(
         modifier = modifier
@@ -64,7 +61,7 @@ fun TopicSelection(
                 .testTag(topicSelectionTestTag),
         ) {
             items(
-                items = onboardingUiState.topics,
+                items = topics,
                 key = { it.topic.id },
             ) {
                 SingleTopicButton(
@@ -81,7 +78,7 @@ fun TopicSelection(
                 .fillMaxWidth()
                 .padding(horizontal = 12.dp)
                 .align(Alignment.BottomStart),
-            state = lazyGridState.scrollbarState(itemsAvailable = onboardingUiState.topics.size),
+            state = lazyGridState.scrollbarState(itemsAvailable = topics.size),
             orientation = Orientation.Horizontal,
         )
     }
@@ -95,10 +92,8 @@ fun TopicSelectionPreview(
 ) {
     ComposeMVITheme {
         TopicSelection(
-            onboardingUiState = OnboardingUiState.Shown(
-                topics = userNewsResources.flatMap { news -> news.followableTopics }
-                    .distinctBy { it.topic.id },
-            ),
+            topics = userNewsResources.flatMap { news -> news.followableTopics }
+                .distinctBy { it.topic.id },
             onTopicCheckedChanged = { _, _ -> }
         )
     }

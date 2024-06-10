@@ -28,7 +28,6 @@ fun NiaIconToggleButton(
     icon: @Composable () -> Unit,
     checkedIcon: @Composable () -> Unit = icon,
 ) {
-    // TODO: File bug
     // Can't use regular IconToggleButton as it doesn't include a shape (appears square)
     FilledIconToggleButton(
         checked = checked,
@@ -55,7 +54,6 @@ fun NiaIconToggleButton(
  * Now in Android icon button default values.
  */
 object NiaIconButtonDefaults {
-    // TODO: File bug
     // IconToggleButton disabled container alpha not exposed by IconButtonDefaults
     const val DISABLED_ICON_BUTTON_CONTAINER_ALPHA = 0.12f
 }

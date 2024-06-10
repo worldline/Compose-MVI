@@ -4,6 +4,8 @@ package com.worldline.composemvi.presentation.ui.base
  * Time capsule interface which serves as a holder for the different states a screen will have
  * during its lifetime.
  *
+ * **See also:** This Medium [article](https://medium.com/@VolodymyrSch/android-simple-mvi-implementation-with-jetpack-compose-5ee5d6fc4908)
+ *
  * @param State The type of [Reducer.ViewState] to store
  */
 interface TimeCapsule<State : Reducer.ViewState> {

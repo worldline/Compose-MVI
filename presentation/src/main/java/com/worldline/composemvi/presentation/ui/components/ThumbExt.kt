@@ -1,7 +1,5 @@
 package com.worldline.composemvi.presentation.ui.components
 
-import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -11,30 +9,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import kotlin.math.roundToInt
-
-/**
- * Remembers a function to react to [Scrollbar] thumb position displacements for a [LazyListState]
- * @param itemsAvailable the amount of items in the list.
- */
-@Composable
-fun LazyListState.rememberDraggableScroller(
-    itemsAvailable: Int,
-): (Float) -> Unit = rememberDraggableScroller(
-    itemsAvailable = itemsAvailable,
-    scroll = ::scrollToItem,
-)
-
-/**
- * Remembers a function to react to [Scrollbar] thumb position displacements for a [LazyGridState]
- * @param itemsAvailable the amount of items in the grid.
- */
-@Composable
-fun LazyGridState.rememberDraggableScroller(
-    itemsAvailable: Int,
-): (Float) -> Unit = rememberDraggableScroller(
-    itemsAvailable = itemsAvailable,
-    scroll = ::scrollToItem,
-)
 
 /**
  * Remembers a function to react to [Scrollbar] thumb position displacements for a

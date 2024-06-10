@@ -1,5 +1,7 @@
 package com.worldline.composemvi.presentation.ui.foryou
 
+import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.ReportDrawnWhen
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -25,14 +27,18 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsBottomHeight
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridScope
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
+import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
@@ -43,57 +49,138 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.worldline.composemvi.domain.model.FollowableTopic
 import com.worldline.composemvi.domain.model.UserNewsResource
 import com.worldline.composemvi.presentation.R
-import com.worldline.composemvi.presentation.ui.components.DeepLinkEffect
 import com.worldline.composemvi.presentation.ui.components.DraggableScrollbar
+import com.worldline.composemvi.presentation.ui.components.NewsResourceCardExpanded
 import com.worldline.composemvi.presentation.ui.components.NiaButton
 import com.worldline.composemvi.presentation.ui.components.NiaOverlayLoadingWheel
 import com.worldline.composemvi.presentation.ui.components.NotificationPermissionEffect
 import com.worldline.composemvi.presentation.ui.components.TopicSelection
-import com.worldline.composemvi.presentation.ui.components.TrackScrollJank
-import com.worldline.composemvi.presentation.ui.components.launchCustomChromeTab
 import com.worldline.composemvi.presentation.ui.components.rememberDraggableScroller
 import com.worldline.composemvi.presentation.ui.components.scrollbarState
+import com.worldline.composemvi.presentation.ui.foryou.ForYouScreenReducer.ForYouEffect
 import com.worldline.composemvi.presentation.ui.theme.ComposeMVITheme
 import com.worldline.composemvi.presentation.utils.DevicePreviews
-import com.worldline.composemvi.presentation.utils.TrackScreenViewEvent
+import com.worldline.composemvi.presentation.utils.LocalLoading
 import com.worldline.composemvi.presentation.utils.UserNewsResourcePreviewParameterProvider
+import com.worldline.composemvi.presentation.utils.launchCustomChromeTab
+import com.worldline.composemvi.presentation.utils.rememberFlowWithLifecycle
 
 @Composable
 fun ForYouScreen(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: ForYouViewModel = hiltViewModel()
 ) {
+    val state = viewModel.state.collectAsStateWithLifecycle()
+    val effect = rememberFlowWithLifecycle(viewModel.effect)
+    val context = LocalContext.current
+    val backgroundColor = MaterialTheme.colorScheme.background.toArgb()
 
+    LaunchedEffect(effect) {
+        effect.collect { action ->
+            when (action) {
+                is ForYouEffect.NavigateToTopic -> {
+                    // This effect would result in a navigation to another screen of the application
+                    // with the topicId as a parameter.
+                    Log.d("ForYouScreen", "Navigate to topic with id: ${action.topicId}")
+                }
+
+                is ForYouEffect.NavigateToNews -> launchCustomChromeTab(
+                    context,
+                    Uri.parse(action.newsUrl),
+                    backgroundColor
+                )
+            }
+        }
+    }
+
+    ForYouScreenContent(
+        modifier = modifier,
+        topicsLoading = state.value.topicsLoading,
+        topics = state.value.topics,
+        topicsVisible = state.value.topicsVisible,
+        newsLoading = state.value.newsLoading,
+        news = state.value.news,
+        onTopicCheckedChanged = { topicId, isChecked ->
+            viewModel.sendEvent(
+                event = ForYouScreenReducer.ForYouEvent.UpdateTopicIsFollowed(
+                    topicId = topicId,
+                    isFollowed = isChecked,
+                )
+            )
+        },
+        onTopicClick = viewModel::onTopicClick,
+        saveFollowedTopics = {
+            viewModel.sendEvent(
+                event = ForYouScreenReducer.ForYouEvent.UpdateTopicsVisible(
+                    isVisible = false
+                )
+            )
+        },
+        onNewsResourcesCheckedChanged = { newsResourceId, isChecked ->
+            viewModel.sendEvent(
+                event = ForYouScreenReducer.ForYouEvent.UpdateNewsIsSaved(
+                    newsId = newsResourceId,
+                    isSaved = isChecked,
+                )
+            )
+        },
+        onNewsResourceViewed = { newsResourceId ->
+            viewModel.sendEvent(
+                event = ForYouScreenReducer.ForYouEvent.UpdateNewsIsViewed(
+                    newsId = newsResourceId,
+                    isViewed = true,
+                )
+            )
+        },
+    )
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ForYouScreenContent(
-    isSyncing: Boolean,
-    onboardingUiState: OnboardingUiState,
-    feedState: NewsFeedUiState,
-    deepLinkedUserNewsResource: UserNewsResource?,
+    topicsLoading: Boolean,
+    topics: List<FollowableTopic>,
+    topicsVisible: Boolean,
+    newsLoading: Boolean,
+    news: List<UserNewsResource>,
     onTopicCheckedChanged: (String, Boolean) -> Unit,
     onTopicClick: (String) -> Unit,
-    onDeepLinkOpened: (String) -> Unit,
     saveFollowedTopics: () -> Unit,
     onNewsResourcesCheckedChanged: (String, Boolean) -> Unit,
     onNewsResourceViewed: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val isOnboardingLoading = onboardingUiState is OnboardingUiState.Loading
-    val isFeedLoading = feedState is NewsFeedUiState.Loading
 
     // This code should be called when the UI is ready for use and relates to Time To Full Display.
-    ReportDrawnWhen { !isSyncing && !isOnboardingLoading && !isFeedLoading }
+    ReportDrawnWhen { !topicsLoading && !newsLoading }
 
-    val itemsAvailable = feedItemsSize(feedState, onboardingUiState)
+    val itemsAvailable = remember {
+        derivedStateOf {
+            val topicsSize = if (topicsLoading) {
+                0
+            } else {
+                1
+            }
+
+            val newsSize = if (newsLoading) {
+                0
+            } else {
+                news.size
+            }
+
+            topicsSize + newsSize
+        }
+    }
 
     val state = rememberLazyStaggeredGridState()
     val scrollbarState = state.scrollbarState(
-        itemsAvailable = itemsAvailable,
+        itemsAvailable = itemsAvailable.value,
     )
-    TrackScrollJank(scrollableState = state, stateName = "forYou:feed")
 
     Box(
         modifier = modifier
@@ -108,43 +195,103 @@ fun ForYouScreenContent(
                 .testTag("forYou:feed"),
             state = state,
         ) {
-            onboarding(
-                onboardingUiState = onboardingUiState,
-                onTopicCheckedChanged = onTopicCheckedChanged,
-                saveFollowedTopics = saveFollowedTopics,
-                // Custom LayoutModifier to remove the enforced parent 16.dp contentPadding
-                // from the LazyVerticalGrid and enable edge-to-edge scrolling for this section
-                interestsItemModifier = Modifier.layout { measurable, constraints ->
-                    val placeable = measurable.measure(
-                        constraints.copy(
-                            maxWidth = constraints.maxWidth + 32.dp.roundToPx(),
-                        ),
-                    )
-                    layout(placeable.width, placeable.height) {
-                        placeable.place(0, 0)
+            if (topicsVisible) {
+                item(span = StaggeredGridItemSpan.FullLine, contentType = "onboarding") {
+                    CompositionLocalProvider(LocalLoading provides topicsLoading) {
+                        Column(
+                            modifier = Modifier.layout { measurable, constraints ->
+                                val placeable = measurable.measure(
+                                    constraints.copy(
+                                        maxWidth = constraints.maxWidth + 32.dp.roundToPx(),
+                                    ),
+                                )
+                                layout(placeable.width, placeable.height) {
+                                    placeable.place(0, 0)
+                                }
+                            }
+                        ) {
+                            Text(
+                                text = stringResource(R.string.feature_foryou_onboarding_guidance_title),
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 24.dp),
+                                style = MaterialTheme.typography.titleMedium,
+                            )
+                            Text(
+                                text = stringResource(R.string.feature_foryou_onboarding_guidance_subtitle),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 8.dp, start = 24.dp, end = 24.dp),
+                                textAlign = TextAlign.Center,
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                            TopicSelection(
+                                topics = topics,
+                                onTopicCheckedChanged = onTopicCheckedChanged,
+                                modifier = Modifier
+                                    .padding(bottom = 8.dp),
+                            )
+                            // Done button
+                            Row(
+                                horizontalArrangement = Arrangement.Center,
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                NiaButton(
+                                    onClick = saveFollowedTopics,
+                                    enabled = topics.any { it.isFollowed },
+                                    modifier = Modifier
+                                        .padding(horizontal = 24.dp)
+                                        .widthIn(364.dp)
+                                        .fillMaxWidth(),
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.feature_foryou_done),
+                                    )
+                                }
+                            }
+                        }
                     }
-                },
-            )
+                }
+            }
 
-            newsFeed(
-                feedState = feedState,
-                onNewsResourcesCheckedChanged = onNewsResourcesCheckedChanged,
-                onNewsResourceViewed = onNewsResourceViewed,
-                onTopicClick = onTopicClick,
-            )
+            items(
+                items = news,
+                key = { it.id },
+                contentType = { "newsFeedItem" },
+            ) { userNewsResource ->
+                CompositionLocalProvider(LocalLoading provides newsLoading) {
+                    NewsResourceCardExpanded(
+                        userNewsResource = userNewsResource,
+                        isBookmarked = userNewsResource.isSaved,
+                        onClick = {
+                            onNewsResourceViewed(userNewsResource.id)
+                        },
+                        hasBeenViewed = userNewsResource.hasBeenViewed,
+                        onToggleBookmark = {
+                            onNewsResourcesCheckedChanged(
+                                userNewsResource.id,
+                                !userNewsResource.isSaved,
+                            )
+                        },
+                        onTopicClick = onTopicClick,
+                        modifier = Modifier
+                            .padding(horizontal = 8.dp)
+                            .animateItemPlacement(),
+                    )
+                }
+            }
 
             item(span = StaggeredGridItemSpan.FullLine, contentType = "bottomSpacing") {
                 Column {
                     Spacer(modifier = Modifier.height(8.dp))
                     // Add space for the content to clear the "offline" snackbar.
-                    // TODO: Check that the Scaffold handles this correctly in NiaApp
-                    // if (isOffline) Spacer(modifier = Modifier.height(48.dp))
                     Spacer(Modifier.windowInsetsBottomHeight(WindowInsets.safeDrawing))
                 }
             }
         }
         AnimatedVisibility(
-            visible = isSyncing || isFeedLoading || isOnboardingLoading,
+            visible = newsLoading || topicsLoading,
             enter = slideInVertically(
                 initialOffsetY = { fullHeight -> -fullHeight },
             ) + fadeIn(),
@@ -174,100 +321,11 @@ fun ForYouScreenContent(
             state = scrollbarState,
             orientation = Orientation.Vertical,
             onThumbMoved = state.rememberDraggableScroller(
-                itemsAvailable = itemsAvailable,
+                itemsAvailable = itemsAvailable.value,
             ),
         )
     }
-    TrackScreenViewEvent(screenName = "ForYou")
     NotificationPermissionEffect()
-    DeepLinkEffect(
-        deepLinkedUserNewsResource,
-        onDeepLinkOpened,
-    )
-}
-
-/**
- * An extension on [LazyListScope] defining the onboarding portion of the for you screen.
- * Depending on the [onboardingUiState], this might emit no items.
- *
- */
-private fun LazyStaggeredGridScope.onboarding(
-    onboardingUiState: OnboardingUiState,
-    onTopicCheckedChanged: (String, Boolean) -> Unit,
-    saveFollowedTopics: () -> Unit,
-    interestsItemModifier: Modifier = Modifier,
-) {
-    when (onboardingUiState) {
-        OnboardingUiState.Loading,
-        OnboardingUiState.LoadFailed,
-        OnboardingUiState.NotShown,
-        -> Unit
-
-        is OnboardingUiState.Shown -> {
-            item(span = StaggeredGridItemSpan.FullLine, contentType = "onboarding") {
-                Column(modifier = interestsItemModifier) {
-                    Text(
-                        text = stringResource(R.string.feature_foryou_onboarding_guidance_title),
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 24.dp),
-                        style = MaterialTheme.typography.titleMedium,
-                    )
-                    Text(
-                        text = stringResource(R.string.feature_foryou_onboarding_guidance_subtitle),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp, start = 24.dp, end = 24.dp),
-                        textAlign = TextAlign.Center,
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                    TopicSelection(
-                        onboardingUiState,
-                        onTopicCheckedChanged,
-                        Modifier.padding(bottom = 8.dp),
-                    )
-                    // Done button
-                    Row(
-                        horizontalArrangement = Arrangement.Center,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        NiaButton(
-                            onClick = saveFollowedTopics,
-                            enabled = onboardingUiState.isDismissable,
-                            modifier = Modifier
-                                .padding(horizontal = 24.dp)
-                                .widthIn(364.dp)
-                                .fillMaxWidth(),
-                        ) {
-                            Text(
-                                text = stringResource(R.string.feature_foryou_done),
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-private fun feedItemsSize(
-    feedState: NewsFeedUiState,
-    onboardingUiState: OnboardingUiState,
-): Int {
-    val feedSize = when (feedState) {
-        NewsFeedUiState.Loading -> 0
-        is NewsFeedUiState.Success -> feedState.feed.size
-    }
-    val onboardingSize = when (onboardingUiState) {
-        OnboardingUiState.Loading,
-        OnboardingUiState.LoadFailed,
-        OnboardingUiState.NotShown,
-        -> 0
-
-        is OnboardingUiState.Shown -> 1
-    }
-    return feedSize + onboardingSize
 }
 
 @DevicePreviews
@@ -278,18 +336,16 @@ fun ForYouScreenPopulatedFeed(
 ) {
     ComposeMVITheme {
         ForYouScreenContent(
-            isSyncing = false,
-            onboardingUiState = OnboardingUiState.NotShown,
-            feedState = NewsFeedUiState.Success(
-                feed = userNewsResources,
-            ),
-            deepLinkedUserNewsResource = null,
+            topicsLoading = false,
+            newsLoading = false,
+            topics = emptyList(),
+            topicsVisible = false,
+            news = userNewsResources,
             onTopicCheckedChanged = { _, _ -> },
             saveFollowedTopics = {},
             onNewsResourcesCheckedChanged = { _, _ -> },
             onNewsResourceViewed = {},
             onTopicClick = {},
-            onDeepLinkOpened = {},
         )
     }
 }
@@ -302,18 +358,16 @@ fun ForYouScreenOfflinePopulatedFeed(
 ) {
     ComposeMVITheme {
         ForYouScreenContent(
-            isSyncing = false,
-            onboardingUiState = OnboardingUiState.NotShown,
-            feedState = NewsFeedUiState.Success(
-                feed = userNewsResources,
-            ),
-            deepLinkedUserNewsResource = null,
+            topicsLoading = false,
+            newsLoading = false,
+            topics = emptyList(),
+            topicsVisible = false,
+            news = userNewsResources,
             onTopicCheckedChanged = { _, _ -> },
             saveFollowedTopics = {},
             onNewsResourcesCheckedChanged = { _, _ -> },
             onNewsResourceViewed = {},
             onTopicClick = {},
-            onDeepLinkOpened = {},
         )
     }
 }
@@ -326,21 +380,17 @@ fun ForYouScreenTopicSelection(
 ) {
     ComposeMVITheme {
         ForYouScreenContent(
-            isSyncing = false,
-            onboardingUiState = OnboardingUiState.Shown(
-                topics = userNewsResources.flatMap { news -> news.followableTopics }
-                    .distinctBy { it.topic.id },
-            ),
-            feedState = NewsFeedUiState.Success(
-                feed = userNewsResources,
-            ),
-            deepLinkedUserNewsResource = null,
+            topicsLoading = false,
+            newsLoading = false,
+            topics = userNewsResources.flatMap { news -> news.followableTopics }
+                .distinctBy { it.topic.id },
+            topicsVisible = true,
+            news = userNewsResources,
             onTopicCheckedChanged = { _, _ -> },
             saveFollowedTopics = {},
             onNewsResourcesCheckedChanged = { _, _ -> },
             onNewsResourceViewed = {},
             onTopicClick = {},
-            onDeepLinkOpened = {},
         )
     }
 }
@@ -350,16 +400,16 @@ fun ForYouScreenTopicSelection(
 fun ForYouScreenLoading() {
     ComposeMVITheme {
         ForYouScreenContent(
-            isSyncing = false,
-            onboardingUiState = OnboardingUiState.Loading,
-            feedState = NewsFeedUiState.Loading,
-            deepLinkedUserNewsResource = null,
+            topicsLoading = true,
+            newsLoading = true,
+            topics = emptyList(),
+            topicsVisible = false,
+            news = emptyList(),
             onTopicCheckedChanged = { _, _ -> },
             saveFollowedTopics = {},
             onNewsResourcesCheckedChanged = { _, _ -> },
             onNewsResourceViewed = {},
             onTopicClick = {},
-            onDeepLinkOpened = {},
         )
     }
 }
@@ -372,18 +422,16 @@ fun ForYouScreenPopulatedAndLoading(
 ) {
     ComposeMVITheme {
         ForYouScreenContent(
-            isSyncing = true,
-            onboardingUiState = OnboardingUiState.Loading,
-            feedState = NewsFeedUiState.Success(
-                feed = userNewsResources,
-            ),
-            deepLinkedUserNewsResource = null,
+            topicsLoading = true,
+            newsLoading = false,
+            topics = emptyList(),
+            topicsVisible = false,
+            news = userNewsResources,
             onTopicCheckedChanged = { _, _ -> },
             saveFollowedTopics = {},
             onNewsResourcesCheckedChanged = { _, _ -> },
             onNewsResourceViewed = {},
             onTopicClick = {},
-            onDeepLinkOpened = {},
         )
     }
 }

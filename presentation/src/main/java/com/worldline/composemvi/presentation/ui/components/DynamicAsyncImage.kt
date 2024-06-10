@@ -12,6 +12,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color.Companion.Unspecified
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalInspectionMode
@@ -23,8 +25,6 @@ import coil.compose.AsyncImagePainter.State.Loading
 import coil.compose.rememberAsyncImagePainter
 import com.worldline.composemvi.presentation.R
 import com.worldline.composemvi.presentation.ui.theme.LocalTintTheme
-import androidx.compose.ui.graphics.Color.Companion.Unspecified
-import androidx.compose.ui.graphics.ColorFilter
 
 /**
  * A wrapper around [AsyncImage] which determines the colorFilter based on the theme

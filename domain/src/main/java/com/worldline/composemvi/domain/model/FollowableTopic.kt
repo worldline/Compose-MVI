@@ -1,7 +1,5 @@
 package com.worldline.composemvi.domain.model
 
-import kotlin.random.Random
-
 /**
  * A [topic] with the additional information for whether or not it is followed.
  */
@@ -14,7 +12,7 @@ data class FollowableTopic(
         fun fake(): FollowableTopic {
             return FollowableTopic(
                 topic = Topic.fake(),
-                isFollowed = Random.nextBoolean(),
+                isFollowed = false,
             )
         }
     }
