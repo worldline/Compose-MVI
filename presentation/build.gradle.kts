@@ -63,7 +63,9 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.material.icons.extended)
-    implementation(libs.coil.compose)
+    implementation(libs.coil.kt)
+    implementation(libs.coil.kt.compose)
+    implementation(libs.coil.kt.svg)
     implementation(libs.androidx.metrics.performance)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
@@ -71,6 +73,8 @@ dependencies {
     implementation(libs.accompanist.permissions)
     implementation(libs.accompanist.placeholder.material3)
     implementation(libs.androidx.browser)
+
+    implementation(libs.timber)
 
     implementation(libs.hilt.android)
     implementation(libs.androidx.hilt.navigation.compose)

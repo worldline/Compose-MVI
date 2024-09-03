@@ -56,6 +56,8 @@ dependencies {
     implementation(project(":domain"))
     implementation(project(":presentation"))
 
+    implementation(libs.timber)
+
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
 
@@ -69,4 +71,7 @@ dependencies {
     implementation(libs.androidx.material3)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    implementation(libs.coil.kt)
+    implementation(libs.coil.kt.svg)
 }

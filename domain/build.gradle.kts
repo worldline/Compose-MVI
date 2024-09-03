@@ -39,6 +39,8 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.kotlinx.datetime)
 
+    implementation(libs.timber)
+
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
 }

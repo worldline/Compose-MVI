@@ -77,6 +77,6 @@ enum class StatusCode(val code: Int) {
     NoNetwork(-1);
 
     companion object {
-        fun from(code: Int) = values().find { it.code == code } ?: Unknown
+        fun from(code: Int) = entries.find { it.code == code } ?: Unknown
     }
 }

@@ -17,3 +17,10 @@ data class FollowableTopic(
         }
     }
 }
+
+fun List<Topic>.mapToFollowableTopic(userData: UserData): List<FollowableTopic> = map { topic ->
+    FollowableTopic(
+        topic = topic,
+        isFollowed = topic.id in userData.followedTopics,
+    )
+}
