@@ -1,9 +1,8 @@
 package com.worldline.composemvi.presentation.ui.foryou
 
 import androidx.lifecycle.viewModelScope
-import com.worldline.composemvi.domain.business.foryou.GetNewsUseCase
-import com.worldline.composemvi.domain.business.foryou.GetTopicsUseCase
-import com.worldline.composemvi.domain.model.Result
+import com.worldline.composemvi.domain.business.foryou.GetForYouDataUseCase
+import com.worldline.composemvi.domain.model.usecase.Result
 import com.worldline.composemvi.presentation.ui.base.BaseViewModel
 import com.worldline.composemvi.presentation.ui.foryou.ForYouScreenReducer.ForYouEffect
 import com.worldline.composemvi.presentation.ui.foryou.ForYouScreenReducer.ForYouEvent
@@ -11,54 +10,53 @@ import com.worldline.composemvi.presentation.ui.foryou.ForYouScreenReducer.ForYo
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 @HiltViewModel
 class ForYouViewModel @Inject constructor(
-    private val getTopicsUseCase: GetTopicsUseCase,
-    private val getNewsUseCase: GetNewsUseCase
+    private val getForYouDataUseCase: GetForYouDataUseCase
 ) : BaseViewModel<ForYouState, ForYouEvent, ForYouEffect>(
     initialState = ForYouState.initial(),
     reducer = ForYouScreenReducer()
 ) {
-    init {
+    fun getData() {
         viewModelScope.launch {
-            getTopicsUseCase(Unit).collect { result ->
+            getForYouDataUseCase(Unit).collect { result ->
                 sendEvent(
-                    event = ForYouEvent.UpdateTopicsLoading(
+                    event = ForYouEvent.UpdateLoading(
                         isLoading = result.isLoading()
                     )
                 )
 
                 when (result) {
-                    is Result.BusinessRuleError -> Unit
-                    is Result.Error -> Unit
-                    Result.Loading -> Unit
-                    is Result.Success -> sendEvent(
-                        event = ForYouEvent.UpdateTopics(
-                            topics = result.data
-                        )
-                    )
-                }
-            }
-        }
+                    is Result.BusinessRuleError -> when (result.error) {
+                        GetForYouDataUseCase.GetForYouDataErrors.NoNewsFound -> {
+                            Timber.e("BusinessRuleError: No news found")
+                        }
 
-        viewModelScope.launch {
-            getNewsUseCase(Unit).collect { result ->
-                sendEvent(
-                    event = ForYouEvent.UpdateNewsLoading(
-                        isLoading = result.isLoading()
-                    )
-                )
+                        GetForYouDataUseCase.GetForYouDataErrors.NoTopicsFound -> {
+                            Timber.e("BusinessRuleError: No topics found")
+                        }
+                    }
 
-                when (result) {
-                    is Result.BusinessRuleError -> Unit
-                    is Result.Error -> Unit
-                    Result.Loading -> Unit
-                    is Result.Success -> sendEvent(
-                        event = ForYouEvent.UpdateNews(
-                            news = result.data
+                    is Result.Error -> {
+                        Timber.e("Error: ${result.error}")
+                    }
+
+                    is Result.Loading -> Unit
+                    is Result.Success -> when (val data = result.data) {
+                        is GetForYouDataUseCase.GetForYouDataSuccess.NewsData -> sendEvent(
+                            event = ForYouEvent.UpdateNews(
+                                news = data.news
+                            )
                         )
-                    )
+
+                        is GetForYouDataUseCase.GetForYouDataSuccess.TopicsData -> sendEvent(
+                            event = ForYouEvent.UpdateTopics(
+                                topics = data.topics
+                            )
+                        )
+                    }
                 }
             }
         }

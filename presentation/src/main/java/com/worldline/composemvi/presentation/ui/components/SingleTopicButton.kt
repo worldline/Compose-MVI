@@ -13,8 +13,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.trace
+import com.worldline.composemvi.presentation.ui.theme.ComposeMVITheme
+import com.worldline.composemvi.presentation.utils.LocalLoading
+import com.worldline.composemvi.presentation.utils.fadePlaceholder
 
 @Composable
 fun SingleTopicButton(
@@ -24,6 +28,8 @@ fun SingleTopicButton(
     isSelected: Boolean,
     onClick: (String, Boolean) -> Unit,
 ) = trace("SingleTopicButton") {
+    val loading = LocalLoading.current
+
     Surface(
         modifier = Modifier
             .width(312.dp)
@@ -47,12 +53,17 @@ fun SingleTopicButton(
                 style = MaterialTheme.typography.titleSmall,
                 modifier = Modifier
                     .padding(horizontal = 12.dp)
-                    .weight(1f),
+                    .weight(1f)
+                    .fadePlaceholder(LocalLoading.current),
                 color = MaterialTheme.colorScheme.onSurface,
             )
             NiaIconToggleButton(
                 checked = isSelected,
-                onCheckedChange = { checked -> onClick(topicId, checked) },
+                onCheckedChange = { checked ->
+                    if (!loading) {
+                        onClick(topicId, checked)
+                    }
+                },
                 icon = {
                     Icon(
                         imageVector = NiaIcons.Add,
@@ -67,5 +78,19 @@ fun SingleTopicButton(
                 },
             )
         }
+    }
+}
+
+@Preview
+@Composable
+fun SingleTopicButtonPreview() {
+    ComposeMVITheme {
+        SingleTopicButton(
+            name = "Topic",
+            topicId = "topicId",
+            imageUrl = "https://example.com/image.jpg",
+            isSelected = false,
+            onClick = { _, _ -> },
+        )
     }
 }

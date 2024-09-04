@@ -46,8 +46,10 @@ import com.worldline.composemvi.domain.model.FollowableTopic
 import com.worldline.composemvi.domain.model.UserNewsResource
 import com.worldline.composemvi.presentation.R
 import com.worldline.composemvi.presentation.ui.theme.ComposeMVITheme
+import com.worldline.composemvi.presentation.utils.LocalLoading
 import com.worldline.composemvi.presentation.utils.LocalTimeZone
 import com.worldline.composemvi.presentation.utils.UserNewsResourcePreviewParameterProvider
+import com.worldline.composemvi.presentation.utils.fadePlaceholder
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Locale
@@ -70,8 +72,15 @@ fun NewsResourceCardExpanded(
     modifier: Modifier = Modifier,
 ) {
     val clickActionLabel = stringResource(R.string.core_ui_card_tap_action)
+
+    val loading = LocalLoading.current
+
     Card(
-        onClick = onClick,
+        onClick = {
+            if (!loading) {
+                onClick()
+            }
+        },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         // Use custom label for accessibility services to communicate button's action to user.
@@ -93,14 +102,24 @@ fun NewsResourceCardExpanded(
                     Spacer(modifier = Modifier.height(12.dp))
                     Row {
                         NewsResourceTitle(
-                            userNewsResource.title,
+                            newsResourceTitle = userNewsResource.title,
                             modifier = Modifier.fillMaxWidth((.8f)),
                         )
                         Spacer(modifier = Modifier.weight(1f))
-                        BookmarkButton(isBookmarked, onToggleBookmark)
+                        BookmarkButton(
+                            isBookmarked = isBookmarked,
+                            onClick = {
+                                if (!loading) {
+                                    onToggleBookmark()
+                                }
+                            }
+                        )
                     }
                     Spacer(modifier = Modifier.height(14.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        modifier = Modifier.fadePlaceholder(LocalLoading.current),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         if (!hasBeenViewed) {
                             NotificationDot(
                                 color = MaterialTheme.colorScheme.tertiary,
@@ -108,14 +127,23 @@ fun NewsResourceCardExpanded(
                             )
                             Spacer(modifier = Modifier.size(6.dp))
                         }
-                        NewsResourceMetaData(userNewsResource.publishDate, userNewsResource.type)
+                        NewsResourceMetaData(
+                            publishDate = userNewsResource.publishDate,
+                            resourceType = userNewsResource.type
+                        )
                     }
                     Spacer(modifier = Modifier.height(14.dp))
-                    NewsResourceShortDescription(userNewsResource.content)
+                    NewsResourceShortDescription(
+                        newsResourceShortDescription = userNewsResource.content
+                    )
                     Spacer(modifier = Modifier.height(12.dp))
                     NewsResourceTopics(
                         topics = userNewsResource.followableTopics,
-                        onTopicClick = onTopicClick,
+                        onTopicClick = { topicId ->
+                            if (!loading) {
+                                onTopicClick(topicId)
+                            }
+                        },
                     )
                 }
             }
@@ -175,7 +203,11 @@ fun NewsResourceTitle(
     newsResourceTitle: String,
     modifier: Modifier = Modifier,
 ) {
-    Text(newsResourceTitle, style = MaterialTheme.typography.headlineSmall, modifier = modifier)
+    Text(
+        text = newsResourceTitle,
+        style = MaterialTheme.typography.headlineSmall,
+        modifier = modifier.fadePlaceholder(LocalLoading.current)
+    )
 }
 
 @Composable
@@ -248,7 +280,11 @@ fun NewsResourceMetaData(
 fun NewsResourceShortDescription(
     newsResourceShortDescription: String,
 ) {
-    Text(newsResourceShortDescription, style = MaterialTheme.typography.bodyLarge)
+    Text(
+        modifier = Modifier.fadePlaceholder(LocalLoading.current),
+        text = newsResourceShortDescription,
+        style = MaterialTheme.typography.bodyLarge
+    )
 }
 
 @Composable
@@ -259,7 +295,9 @@ fun NewsResourceTopics(
 ) {
     Row(
         // causes narrow chips
-        modifier = modifier.horizontalScroll(rememberScrollState()),
+        modifier = modifier
+            .horizontalScroll(rememberScrollState())
+            .fadePlaceholder(LocalLoading.current),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         for (followableTopic in topics) {

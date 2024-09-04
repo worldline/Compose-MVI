@@ -2,7 +2,7 @@ package com.worldline.composemvi.domain.business.base
 
 import android.util.Log
 import com.worldline.composemvi.domain.error.mapToAppError
-import com.worldline.composemvi.domain.model.Result
+import com.worldline.composemvi.domain.model.usecase.Result
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 

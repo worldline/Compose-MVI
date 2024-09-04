@@ -1,4 +1,4 @@
-package com.worldline.composemvi.domain.model
+package com.worldline.composemvi.domain.model.usecase
 
 import androidx.lifecycle.MutableLiveData
 import com.worldline.composemvi.domain.error.AppError
@@ -13,7 +13,7 @@ sealed class Result<out D, out E> {
     data class Success<out D>(val data: D) : Result<D, Nothing>()
     data class Error(val error: AppError) : Result<Nothing, Nothing>()
     data class BusinessRuleError<out E>(val error: E) : Result<Nothing, E>()
-    object Loading : Result<Nothing, Nothing>()
+    data object Loading : Result<Nothing, Nothing>()
 
     fun isSuccessful() = this is Success
     fun hasFailed() = this is Error || this is BusinessRuleError<*>

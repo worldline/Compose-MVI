@@ -98,6 +98,10 @@ fun ForYouScreen(
         }
     }
 
+    LaunchedEffect(Unit) {
+        viewModel.getData()
+    }
+
     ForYouScreenContent(
         modifier = modifier,
         topicsLoading = state.value.topicsLoading,

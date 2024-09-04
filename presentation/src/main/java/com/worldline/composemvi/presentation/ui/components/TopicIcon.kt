@@ -7,6 +7,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.worldline.composemvi.presentation.R
+import com.worldline.composemvi.presentation.utils.LocalLoading
+import com.worldline.composemvi.presentation.utils.fadePlaceholder
 
 @Composable
 fun TopicIcon(
@@ -20,6 +22,7 @@ fun TopicIcon(
         contentDescription = null,
         modifier = modifier
             .padding(10.dp)
-            .size(32.dp),
+            .size(32.dp)
+            .fadePlaceholder(LocalLoading.current),
     )
 }

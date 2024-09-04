@@ -9,6 +9,7 @@ class ForYouScreenReducer :
     Reducer<ForYouScreenReducer.ForYouState, ForYouScreenReducer.ForYouEvent, ForYouScreenReducer.ForYouEffect> {
     @Immutable
     sealed class ForYouEvent : Reducer.ViewEvent {
+        data class UpdateLoading(val isLoading: Boolean) : ForYouEvent()
         data class UpdateTopicsLoading(val isLoading: Boolean) : ForYouEvent()
         data class UpdateTopics(val topics: List<FollowableTopic>) : ForYouEvent()
         data class UpdateNewsLoading(val isLoading: Boolean) : ForYouEvent()
@@ -71,6 +72,13 @@ class ForYouScreenReducer :
         event: ForYouEvent
     ): Pair<ForYouState, ForYouEffect?> {
         return when (event) {
+            is ForYouEvent.UpdateLoading -> {
+                previousState.copy(
+                    topicsLoading = event.isLoading,
+                    newsLoading = event.isLoading
+                ) to null
+            }
+
             is ForYouEvent.UpdateTopicsLoading -> {
                 previousState.copy(
                     topicsLoading = event.isLoading
