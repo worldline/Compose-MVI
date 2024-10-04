@@ -1,15 +1,19 @@
 package com.worldline.composemvi.presentation.ui.base
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.worldline.composemvi.presentation.BuildConfig
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 /**
  * Base view model following the MVI architecture (MVVM with state management).
@@ -21,12 +25,21 @@ import kotlinx.coroutines.flow.receiveAsFlow
  * @param initialState The initial state of the view model
  */
 abstract class BaseViewModel<State : Reducer.ViewState, Event : Reducer.ViewEvent, Effect : Reducer.ViewEffect>(
-    initialState: State,
+    val initialState: State,
     private val reducer: Reducer<State, Event, Effect>
 ) : ViewModel() {
     private val _state: MutableStateFlow<State> = MutableStateFlow(initialState)
-    val state: StateFlow<State>
-        get() = _state.asStateFlow()
+    val state: StateFlow<State> by lazy {
+        _state.onStart {
+            viewModelScope.launch {
+                initialDataLoad()
+            }
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000L),
+            initialValue = initialState
+        )
+    }
 
     private val _event: MutableSharedFlow<Event> = MutableSharedFlow()
     val event: SharedFlow<Event>
@@ -42,6 +55,8 @@ abstract class BaseViewModel<State : Reducer.ViewState, Event : Reducer.ViewEven
     init {
         timeCapsule.addState(initialState)
     }
+
+    open suspend fun initialDataLoad() {}
 
     fun sendEffect(effect: Effect) {
         _effects.trySend(effect)

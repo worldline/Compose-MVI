@@ -1,6 +1,5 @@
 package com.worldline.composemvi.presentation.ui.foryou
 
-import androidx.lifecycle.viewModelScope
 import com.worldline.composemvi.domain.business.foryou.GetForYouDataUseCase
 import com.worldline.composemvi.domain.model.usecase.Result
 import com.worldline.composemvi.presentation.ui.base.BaseViewModel
@@ -9,7 +8,6 @@ import com.worldline.composemvi.presentation.ui.foryou.ForYouScreenReducer.ForYo
 import com.worldline.composemvi.presentation.ui.foryou.ForYouScreenReducer.ForYouState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
-import kotlinx.coroutines.launch
 import timber.log.Timber
 
 @HiltViewModel
@@ -19,44 +17,43 @@ class ForYouViewModel @Inject constructor(
     initialState = ForYouState.initial(),
     reducer = ForYouScreenReducer()
 ) {
-    fun getData() {
-        viewModelScope.launch {
-            getForYouDataUseCase(Unit).collect { result ->
-                sendEvent(
-                    event = ForYouEvent.UpdateLoading(
-                        isLoading = result.isLoading()
-                    )
+
+    override suspend fun initialDataLoad() {
+        getForYouDataUseCase(Unit).collect { result ->
+            sendEvent(
+                event = ForYouEvent.UpdateLoading(
+                    isLoading = result.isLoading()
                 )
+            )
 
-                when (result) {
-                    is Result.BusinessRuleError -> when (result.error) {
-                        GetForYouDataUseCase.GetForYouDataErrors.NoNewsFound -> {
-                            Timber.e("BusinessRuleError: No news found")
-                        }
-
-                        GetForYouDataUseCase.GetForYouDataErrors.NoTopicsFound -> {
-                            Timber.e("BusinessRuleError: No topics found")
-                        }
+            when (result) {
+                is Result.BusinessRuleError -> when (result.error) {
+                    GetForYouDataUseCase.GetForYouDataErrors.NoNewsFound -> {
+                        Timber.e("BusinessRuleError: No news found")
                     }
 
-                    is Result.Error -> {
-                        Timber.e("Error: ${result.error}")
+                    GetForYouDataUseCase.GetForYouDataErrors.NoTopicsFound -> {
+                        Timber.e("BusinessRuleError: No topics found")
                     }
+                }
 
-                    is Result.Loading -> Unit
-                    is Result.Success -> when (val data = result.data) {
-                        is GetForYouDataUseCase.GetForYouDataSuccess.NewsData -> sendEvent(
-                            event = ForYouEvent.UpdateNews(
-                                news = data.news
-                            )
+                is Result.Error -> {
+                    Timber.e("Error: ${result.error}")
+                }
+
+                is Result.Loading -> Unit
+                is Result.Success -> when (val data = result.data) {
+                    is GetForYouDataUseCase.GetForYouDataSuccess.NewsData -> sendEvent(
+                        event = ForYouEvent.UpdateNews(
+                            news = data.news
                         )
+                    )
 
-                        is GetForYouDataUseCase.GetForYouDataSuccess.TopicsData -> sendEvent(
-                            event = ForYouEvent.UpdateTopics(
-                                topics = data.topics
-                            )
+                    is GetForYouDataUseCase.GetForYouDataSuccess.TopicsData -> sendEvent(
+                        event = ForYouEvent.UpdateTopics(
+                            topics = data.topics
                         )
-                    }
+                    )
                 }
             }
         }
